@@ -1,0 +1,89 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd"
+       default-lazy-init="true">
+
+    <bean id="processEngineConfiguration" class="org.activiti.spring.SpringProcessEngineConfiguration">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="databaseSchemaUpdate" value="true"/>
+        <property name="databaseType" value="mysql"/>
+        <property name="jobExecutorActivate" value="false"/>
+        <!-- 三种方式集成自定义用户、用户组（1）维护用户管理和角色管理时，将相关信息同步到act_id_**表中-->
+        <!--（2）删除act_id_**表，建立同名视图,本文使用(最简单)-->
+        <property name="dbIdentityUsed" value="false"/>
+        <!--（3）重写相关接口，不再从act_id_**表中取数据-->
+        <!--<property name="customSessionFactories">
+            <list>
+                <bean class="com.cnpc.framework.activiti.service.impl.CustomUserEntityManagerFactory">
+                    <property name="customUserEntityManager">
+                        <bean class="com.cnpc.framework.activiti.service.impl.CustomUserEntityManager">
+                        </bean>
+                    </property>
+                </bean>
+                <bean class="com.cnpc.framework.activiti.service.impl.CustomGroupEntityManagerFactory">
+                    <property name="customGroupEntityManager">
+                        <bean class="com.cnpc.framework.activiti.service.impl.CustomGroupEntityManager">
+                        </bean>
+                    </property>
+                </bean>
+            </list>
+        </property>-->
+        <!--解决部署后生成png图片中文乱码的问题-->
+        <property name="xmlEncoding" value="utf-8" />
+        <property name="activityFontName" value="宋体"/>
+        <property name="labelFontName" value="宋体"/>
+        <property name="annotationFontName" value="宋体"/>
+        <property name="processDiagramGenerator" ref="customProcessDiagramGenerator"/>
+        <!--全局监听器-->
+        <property name="eventListeners">
+            <list>
+                <ref bean="customEventListener"></ref>
+            </list>
+        </property>
+    </bean>
+
+
+    <bean id="customEventListener" class="com.cnpc.framework.activiti.listener.CustomEventListener">
+        <property name="handlers">
+            <map>
+                <entry key="TASK_ASSIGNED" value="taskAssignedListener"/>
+                <!--主要用于委托审批-->
+                <entry key="TASK_CREATED"  value="taskCreatedListener"/>
+                <!--用于任务完成发送消息提醒-->
+                <entry key="TASK_COMPLETED" value="taskCompleteListener"/>
+                <!-- 其他通用的监听器可在此按需添加
+                <entry key="TASK_COMPLETED" value="taskCompleteListener"/>
+                <entry key="TASK_CREATED" value="taskAssignedListener"/>
+                <entry key="PROCESS_COMPLETED" value="processCompleteListener"/>
+                <entry key="ACTIVITY_STARTED" value="activityStartedListener"/>
+                <entry key="ACTIVITY_COMPLETED" value="activityCompletedListener"/>
+                <entry key="ACTIVITY_SIGNALED" value="activitySignaledListener"/>-->
+            </map>
+        </property>
+    </bean>
+
+    <bean id="taskAssignedListener" class="com.cnpc.framework.activiti.listener.TaskAssignedListener"></bean>
+    <bean id="taskCreatedListener" class="com.cnpc.framework.activiti.listener.TaskCreatedListener"></bean>
+    <bean id="taskCompleteListener" class="com.cnpc.framework.activiti.listener.TaskCompletedListener"></bean>
+
+    <!--解决部署的流程图连线文字显示的问题-->
+    <bean id="customProcessDiagramGenerator" class="com.cnpc.framework.activiti.service.impl.CustomProcessDiagramGenerator"/>
+
+    <bean id="processEngine" class="org.activiti.spring.ProcessEngineFactoryBean">
+        <property name="processEngineConfiguration" ref="processEngineConfiguration"/>
+    </bean>
+
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
+    <bean id="identityService" factory-bean="processEngine" factory-method="getIdentityService"/>
+    <bean id="formService" factory-bean="processEngine" factory-method="getFormService"/>
+    <bean id="repositoryService" factory-bean="processEngine" factory-method="getRepositoryService"/>
+    <bean id="runtimeService" factory-bean="processEngine" factory-method="getRuntimeService"/>
+    <bean id="taskService" factory-bean="processEngine" factory-method="getTaskService"/>
+    <bean id="historyService" factory-bean="processEngine" factory-method="getHistoryService"/>
+    <bean id="managementService" factory-bean="processEngine" factory-method="getManagementService"/>
+    <bean id="dynamicBpmnService" factory-bean="processEngine" factory-method="getDynamicBpmnService"/>
+
+
+</beans>

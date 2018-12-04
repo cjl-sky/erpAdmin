@@ -1,0 +1,11 @@
+<div id="imageContainer" class="text-center" align="center">
+    <img src="${basePath}/resources/common/images/admineap.png">
+</div>
+
+<script>
+    var instanceId = "${instanceId?default(0)}";
+    var imagePath = "${image?default(0)}";
+    if (imagePath != 0) {
+        $("#imageContainer img").attr("src", basePath + imagePath+"?date="+new Date());
+    }
+</script>

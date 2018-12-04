@@ -1,0 +1,71 @@
+<form id="train_form" name="train_form" class="form-horizontal">
+    <input type="hidden" name="id">
+    <input type="hidden" name="version">
+    <input type="hidden" name="createDateTime" data-flag="date" data-format="yyyy-mm-dd hh:ii:ss">
+    <input type="hidden" name="deleted" value="0">
+    <input type='hidden' value="${CSRFToken}" id='csrftoken'>
+    <div class="box-body">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="col-sm-3 control-label">课程名称<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="text" readonly="readonly" class="form-control" id="name" name="name"
+                           placeholder="请填写课程名称">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">上课时间<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="text" readonly="readonly" class="form-control" id="courseTime" name="courseTime"
+                           placeholder="请填写上课时间">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">课时<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="text" readonly="readonly" class="form-control" id="duration" name="duration"
+                           placeholder="请填写课时">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="col-sm-3 control-label">上课老师<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="text" readonly="readonly" class="form-control" id="teacher" name="teacher"
+                           placeholder="请填写上课老师">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">地点<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="text" readonly="readonly" class="form-control" id="address" name="address"
+                           placeholder="请填写地点">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">备注</label>
+                <div class="col-sm-8">
+                    <textarea name="remark" readonly="readonly" id="remark" placeholder="请填写备注"
+                              class="form-control"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script>
+    var trainform;
+    var id = "${id?default(0)}";
+    $(function () {
+        //初始化表单
+        trainform = $("#train_form").form();
+        trainform.initComponent();
+        if (id != 0) {
+            ajaxPost(basePath + "/train/get/" + id, null, function (data) {
+                trainform.initFormData(data);
+            })
+
+        }
+    });
+
+</script>

@@ -1,0 +1,157 @@
+<style>
+    table.dataTable thead > tr > th {
+        padding-right: 0px;
+    }
+</style>
+<section class="content-header">
+    <h1>
+        我的待办
+        <small>列表</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="${basePath}"><i class="fa fa-dashboard"></i> 首页</a></li>
+        <li><a href="#">工作流管理</a></li>
+        <li class="active">我的待办</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <!-- /.box-header -->
+                <div class="dataTables_filter" id="searchDiv" style="display: none">
+                    <!--查询条件-->
+                    <input type="hidden" value="${user.id}" data-noreset="true" name="userId">
+                    <input type="search" placeholder="请输入实例名称" title="名称" name="name"
+                           class="form-control" id="name" operator="like" likeOption="true">
+                    <input type="search" placeholder="请输入业务key" title="业务key" name="businessKey"
+                           class="form-control" id="businessKey" operator="eq" likeOption="false">
+                    <select name="category" id="category" data-src="/activiti/module/getAll" data-flag="urlSelector"
+                            data-placeholder="请选择业务类别" class="form-control select2" data-text="name"
+                            data-value="code" style="width:160px;"
+                            data-blank="true"></select>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" data-btn-type="search">查询</button>
+                        <button type="button" class="btn btn-default" data-btn-type="reset">重置</button>
+                    </div>
+                    <div class="btn-group">
+                       <!-- <button type="button" class="btn btn-default" data-btn-type="batchClaim">批量签收</button>-->
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default" data-btn-type="done"><i class="fa fa-reply"></i>&nbsp;我的已办</button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <table id="tasktodo_table" class="table table-bordered table-striped table-hover">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="msgcontainer">
+
+    </div>
+</section>
+
+<script>
+    var tasktodoTable;
+    var form = $("#searchDiv").form({baseEntity: false});
+    form.initComponent();
+
+    var taskTodoObj = {
+        showMonitor: function (rowId) {
+            modals.openWin({
+                winId: "flowWin",
+                width: "900px",
+                url: basePath + "/activiti/monitor/" + rowId,
+                title: "流程明细"
+            });
+        },
+        claimTask: function (rowId) {
+            modals.confirm("是否签收该任务？", function () {
+                ajaxPost(basePath + "/activiti/task/claim/" + rowId + "/${user.id}", null, function (data) {
+                    if (!data.success)
+                        modals.info(data.message);
+                    tasktodoTable.reloadRowData(rowId);
+                })
+            })
+        },
+        unclaimTask: function (rowId) {
+            modals.confirm("是否取消签收该任务？", function () {
+                ajaxPost(basePath + "/activiti/task/unclaim/" + rowId + "/${user.id}", null, function (data) {
+                    if (!data.success)
+                        modals.info(data.message);
+                    tasktodoTable.reloadRowData(rowId);
+                })
+            })
+        },
+        dealTask: function (rowId) {
+            ajaxPost(basePath + "/activiti/task/checkClaim/" + rowId + "/${user.id}", null, function (data) {
+                if (data.success) {
+                    if (data.data)
+                        loadPage(basePath + "/activiti/task/deal/" + rowId);
+                    else {
+                        modals.confirm(data.message, function () {
+                            ajaxPost(basePath + "/activiti/task/claim/" + rowId + "/${user.id}", null, function (ret) {
+                                if (ret.success)
+                                    loadPage(basePath + "/activiti/task/deal/" + rowId);
+                                else {
+                                    modals.error(ret.message);
+                                    tasktodoTable.reloadRowData(rowId);
+                                }
+                            });
+                        });
+                    }
+                } else {
+                    modals.info(data.message);
+                    tasktodoTable.reloadRowData(rowId);
+                }
+            });
+
+        },
+        initButtonEvent:function () {
+            $("button[data-btn-type='done']").click(function () {
+                loadPage(basePath+"/activiti/task/done/list");
+            })
+        }
+
+
+    }
+
+    //方法入口
+    $(function () {
+        tasktodoTable = new CommonTable("tasktodo_table", "task_todo_list", "searchDiv", null);
+        //绑定按钮事件
+        taskTodoObj.initButtonEvent();
+
+    })
+
+    function fnRenderSuspensionState(value) {
+        if (value == "1")
+            return '<span class="label label-success">正常</span>';
+        else
+            return '<span class="label label-danger">挂起</span>';
+    }
+
+
+    function fnRenderOperator(value, type, rowObj) {
+        var instanceId = rowObj.processInstanceId;
+        var oper = "";
+        oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='taskTodoObj.showMonitor(\"" + instanceId + "\")'>流程明细</a>";
+        if (rowObj.suspensionState == "1") {
+            //已有签收人
+            //console.log(rowObj.initialAssignee+"----"+rowObj.assignee);
+            if (rowObj.assignee) {
+                if (rowObj.canUnclaim=="1") {
+                    //签收人和初始签收人不一致
+                    oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='taskTodoObj.unclaimTask(\"" + value + "\")'>取消签收</a>";
+                }
+            }
+            else
+                oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='taskTodoObj.claimTask(\"" + value + "\")'>签收</a>";
+            oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='taskTodoObj.dealTask(\"" + value + "\")'>办理</a>";
+        }
+        return oper;
+    }
+</script>

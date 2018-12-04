@@ -1,0 +1,58 @@
+<!--用户调整后是否继续走流程-->
+<div class="form-group">
+    <label class="control-label col-xs-3">是否继续提交审批</label>
+    <div class="col-xs-7">
+        <label class="control-label" id="agreeLabel">
+            <input type="radio" name="approved" data-flag="icheck" checked="checked" class="square-blue" value="true"> 继续提交
+        </label> &nbsp;
+        <label class="control-label">
+            <input type="radio" name="approved" data-flag="icheck" class="square-blue" value="false">终止申请
+        </label>
+    </div>
+</div>
+<div class="form-group">
+    <label class="control-label col-xs-3">修改说明/终止原因</label>
+    <div class="col-xs-7">
+        <textarea name="suggestion" id="suggestion" placeholder="请填写修改意见/终止流程原因" class="form-control">修改后提交</textarea>
+    </div>
+</div>
+<script>
+    var workflowCtrl = {
+        thisForm: null,
+        init: function (formId) {
+            this.thisForm = $("#" + formId).form({baseEntity: false});
+            this.thisForm.initComponent();
+            this.bindClickEvent(formId);
+            return this.thisForm;
+        },
+        bindClickEvent: function (formId) {
+            var intervalid = setInterval(function () {
+                if ($("#agreeLabel div").hasClass("iradio_square-blue")) {
+                    $("input[name='approved']").on('ifChecked', function (e) {
+                        var value=$(this).val();
+                        if (value=="false") {
+                            $("#suggestion").val("终止流程");
+                            $("#suggestion").attr("placeholder","请填写终止流程原因");
+                        }
+                        if(value=="true"){
+                            $("#suggestion").val("修改后提交");
+                            $("#suggestion").attr("placeholder","请填写修改说明");
+                        }
+                        var validator = $("#"+formId).data('bootstrapValidator');
+                        if (validator && validator.options.fields["suggestion"])
+                            validator.updateStatus("suggestion", 'NOT_VALIDATED', null).validateField("suggestion");
+                    });
+                    clearInterval(intervalid);
+                }
+            }, 100);
+        },
+        validators: function () {
+            var fields = {
+                suggestion:{validators:{notEmpty:{message:"请填写修改意见/终止流程原因"}}}
+
+            };
+            return fields;
+        }
+    }
+
+</script>

@@ -1,0 +1,88 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><li class="fa fa-remove"></li></button>
+    <h5 class="modal-title"></h5>
+</div>
+
+<div class="modal-body" style="height:500px;overflow:auto ">
+    <div id="colTree">
+
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" onclick="customCtrl.saveConfig()"><i class="fa fa-save"></i>&nbsp;保存</button>
+    <button class="btn btn-primary" onclick="customCtrl.setDefault()"><i class="fa fa-check-square-o"></i>&nbsp;恢复默认</button>
+    <button class="btn btn-default" onclick="customCtrl.cancel()"><i class="fa fa-remove"></i>&nbsp;取消</button>
+</div>
+<script>
+var queryId="${queryId}";
+var pageName="${pageName}";
+
+var customCtrl={
+    loadTree:function () {
+        var treeData=null;
+        ajaxPost(basePath + "/query/getColumns" , {queryId:queryId}, function (data) {
+            treeData = data;
+        });
+        $("#colTree").treeview({
+            data: treeData,
+            showBorder: true,
+            levels: 1,
+            showCheckbox: true,
+            showIcon: false
+        });
+        $("#colTree").treeview('checkAll');
+        //过滤掉隐藏的字段
+        ajaxPost(basePath+"/query/getSelectedColumns",{queryId:queryId,pageName:pageName},function (hideCols) {
+            console.log(hideCols);
+            for(var i=0;i<hideCols.length;i++) {
+                var nodes = $("#colTree").data('treeview').findNodes(hideCols[i], 'g', 'id');
+                if(nodes&&nodes.length>0);
+                    $("#colTree").treeview('uncheckNode',nodes[0]);
+            }
+        })
+    },
+    saveConfig:function () {
+        var self=this;
+       var checkedNodes=$("#colTree").treeview("getChecked");
+       if(!checkedNodes||checkedNodes.length==0){
+           modals.info("请至少选择一个要显示的列");
+           return false;
+       }
+       var uncheckedNodes=$("#colTree").treeview("getUnchecked");
+       var nodeArr=[];
+       for(var i=0;i<uncheckedNodes.length;i++){
+           nodeArr.push(uncheckedNodes[i].id);
+       }
+       var obj={};
+        obj.queryId=queryId;
+        obj.pageName=pageName;
+        obj.columnsName=nodeArr.length>0?nodeArr.join():"";
+        ajaxPost(basePath+"/query/saveQueryConfig",{configObj:JSON.stringify(obj)},function (result) {
+            if(result.success){
+                modals.correct("自定义列成功");
+                self.cancel();
+            }
+        })
+    },
+    setDefault:function () {
+        var self=this;
+        var obj={};
+        obj.queryId=queryId;
+        obj.pageName=pageName;
+        ajaxPost(basePath+"/query/setDefault",{configObj:JSON.stringify(obj)},function (result) {
+            if(result.success){
+                modals.correct("已设置为默认值");
+                self.cancel();
+            }
+        })
+    },
+    cancel:function () {
+        modals.hideWin("customWin");
+    }
+}
+
+//方法入口
+$(function () {
+   customCtrl.loadTree();
+})
+</script>

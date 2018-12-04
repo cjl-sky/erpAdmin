@@ -1,0 +1,131 @@
+<style>
+    table.dataTable thead > tr > th {
+        padding-right: 0px;
+    }
+</style>
+<section class="content-header">
+    <h1>
+        工作流实例
+        <small>正在运行中的流程</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="${basePath}"><i class="fa fa-dashboard"></i> 首页</a></li>
+        <li><a href="#">工作流管理</a></li>
+        <li class="active">工作流实例</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <!-- /.box-header -->
+                <div class="dataTables_filter" id="searchDiv" style="display: none">
+                    <!--查询条件-->
+                    <input type="search" placeholder="请输入实例名称" title="名称" name="name"
+                           class="form-control" id="name" operator="like" likeOption="true">
+                    <input type="search" placeholder="请输入业务key" title="名称" name="businessKey"
+                           class="form-control" id="businessKey" operator="eq" likeOption="false">
+                    <select name="category" id="category" data-src="/activiti/module/getAll" data-flag="urlSelector"
+                            data-placeholder="请选择业务类别" class="form-control select2" data-text="name"
+                            data-value="code" style="width:160px;"
+                            data-blank="true"></select>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" data-btn-type="search">查询</button>
+                        <button type="button" class="btn btn-default" data-btn-type="reset">重置</button>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default" data-btn-type="delete">删除</button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <table id="processinstance_table" class="table table-bordered table-striped table-hover">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="msgcontainer">
+
+    </div>
+</section>
+
+<script>
+    var processinstanceTable, winId = "modelWin";
+    var form = $("#searchDiv").form({baseEntity: false});
+    form.initComponent();
+
+    var processInstanceObj = {
+        deleteProcessInstance: function (rowId) {
+            if (!rowId) {
+                modals.info('请选择要删除的流程实例');
+                return false;
+            }
+            modals.confirm("删除该工作流实例后相关流程待办和历史记录都将删除，是否确认？", function () {
+                ajaxPost(basePath + "/activiti/processinstance/delete/" + rowId, null, function (data) {
+                    if (data.success) {
+                        processinstanceTable.reloadRowData();
+                    } else {
+                        modals.info("流程实例被引用，不可删除！");
+                    }
+                });
+            })
+        },
+
+        showMonitor: function (rowId) {
+            modals.openWin({
+                winId: "flowWin",
+                width: "900px",
+                url: basePath + "/activiti/monitor/" + rowId,
+                title: "流程明细"
+            });
+        },
+        toggleState:function (rowId) {
+            modals.confirm("是否确认执行该操作？", function () {
+                ajaxPost(basePath + "/activiti/processinstance/toggleSuspensionState/" + rowId, null, function (data) {
+                    if (data.success) {
+                        processinstanceTable.reloadRowData();
+                    } else {
+                        modals.info("操作失败！");
+                    }
+                });
+            })
+
+        }
+
+    }
+
+    //方法入口
+    $(function () {
+        processinstanceTable = new CommonTable("processinstance_table", "process_instance_list", "searchDiv", null);
+        //绑定按钮事件
+        $("button[data-btn-type]").click(function () {
+            var action = $(this).data("btn-type");
+            var rowId = processinstanceTable.getSelectedRowId();
+            switch (action) {
+                case 'delete':
+                    processInstanceObj.deleteProcessInstance(rowId);
+                    break;
+                default:
+                    break;
+            }
+        })
+    })
+
+    function fnRenderSuspensionState(value) {
+        if(value=="1")
+            return '<span class="label label-success">正常</span>';
+        else
+            return '<span class="label label-danger">挂起</span>';
+    }
+
+    function fnRenderOperator(value, type, rowObj) {
+        var oper = "";
+        oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='processInstanceObj.showMonitor(\"" + value + "\")'>流程明细</a>";
+        if(rowObj.suspensionState=="1")
+            oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='processInstanceObj.toggleState(\"" + value + "\")'>挂起</a>";
+        else
+            oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='processInstanceObj.toggleState(\"" + value + "\")'>激活</a>";
+        return oper;
+    }
+</script>

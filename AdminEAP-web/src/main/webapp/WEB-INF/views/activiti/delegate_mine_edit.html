@@ -1,0 +1,205 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+        <li class="fa fa-remove"></li>
+    </button>
+    <h5 class="modal-title"></h5>
+</div>
+
+<div class="modal-body">
+    <form id="delegate_form" name="delegate_form" class="form-horizontal">
+        <input type="hidden" name="id">
+        <input type="hidden" name="version">
+        <input type="hidden" name="createDateTime" data-flag="date" data-format="yyyy-mm-dd hh:ii:ss">
+        <input type='hidden' value="${CSRFToken}" id='csrftoken'>
+        <div class="box-body">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">委托业务</label>
+                    <div class="col-sm-8">
+                        <select name="moduleId" id="moduleId" data-src="/activiti/module/getAll" data-flag="urlSelector"
+                                data-placeholder="请选择委托业务" class="form-control select2" style="width:100%"
+                                data-blank="true" multiple></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">委托人</label>
+                    <div class="col-sm-5">
+                        <input type="hidden" id="assignee" name="assignee" value="${user.id}">
+                        <label class="control-label">${user.name}</label>
+                    </div>
+
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">被委托人<span style="color:red">*</span></label>
+                    <div class="col-sm-6">
+                        <input type="hidden" class="form-control" id="attorney" name="attorney" placeholder="请选择被委托人">
+                        <input type="text" class="form-control" id="attorneyName" name="attorneyName" readonly="readonly" placeholder="请选择被委托人">
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="button" class="btn btn-primary" data-btn-type="selectUser"><i
+                                class="fa fa-user"></i>&nbsp;选择
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">委托开始时间<span style="color:red">*</span></label>
+                    <div class="input-group col-sm-8">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input type="text" placeholder="请填写委托开始时间" name="startTime" id="startTime"
+                               data-flag="datepicker" class="form-control" data-format="yyyy-mm-dd">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">委托结束时间<span style="color:red">*</span></label>
+                    <div class="input-group col-sm-8">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input type="text" placeholder="请填写委托结束时间" name="endTime" id="endTime" data-flag="datepicker"
+                               class="form-control" data-format="yyyy-mm-dd">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">是否启用</label>
+                    <div class="col-sm-8">
+                        <label class="control-label"> <input type="radio" name="deleted" data-flag="icheck"
+                                                             class="square-blue" checked="checked"
+                                                             value="0"> 启用
+                        </label> &nbsp;&nbsp;&nbsp;
+                        <label class="control-label"> <input type="radio" name="deleted" data-flag="icheck"
+                                                             class="square-blue" value="1"> 禁用
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">委托原因</label>
+                    <div class="col-sm-8">
+                        <textarea name="reason" id="reason" placeholder="请填写委托原因" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="box-footer text-right">
+            <button type="button" class="btn btn-default" data-btn-type="cancel" data-dismiss="modal">取消</button>
+            <button type="submit" class="btn btn-primary" data-btn-type="save">提交</button>
+        </div>
+    </form>
+</div>
+<script>
+    var form;
+    var id = "${id?default(0)}";
+    var delegateEditCtrl = {
+        initButtonEvent: function () {
+            $("button[data-btn-type='selectUser']").click(function () {
+                var ids = $("#attorney").val() || 0;
+                modals.openWin({
+                    winId: 'userSelectWin',
+                    url: basePath + '/user/select/0/' + ids + '/setAttorney',
+                    width: '850px',
+                    title: "选择被委托人"
+                })
+            });
+          /*  $("button[data-btn-type='save']").click(function () {
+                alert($("[name='moduleId']")[0].value);
+            })*/
+        }
+    }
+    $(function () {
+        //初始化表单
+        form = $("#delegate_form").form();
+        //数据校验
+        $("#delegate_form").bootstrapValidator({
+            message: '请输入有效值',
+            feedbackIcons: {
+                valid: 'glyphicon glyphicon-ok',
+                invalid: 'glyphicon glyphicon-remove',
+                validating: 'glyphicon glyphicon-refresh'
+            },
+            submitHandler: function () {
+                modals.confirm('确认保存？', function () {
+                    var delegate = form.getFormSimpleData();
+                    ajaxPost(basePath + '/activiti/delegate/save', delegate, function (data) {
+                        if (data.success) {
+                            if (id != "0") {
+                                modals.hideWin(winId);
+                                delegateTable.reloadRowData(id);
+                            } else {
+                                modals.hideWin(winId);
+                                delegateTable.reloadData();
+                            }
+                        }
+                    });
+                });
+            },
+            fields: {
+                "attorneyName": {
+                    validators: {
+                        notEmpty: {message: '被委托人不能为空'}
+                    }
+                },
+                "startTime": {
+                    validators: {
+                        notEmpty: {message: '委托开始时间不能为空'},
+                        date: {format: $(this).data('format'), message: '请输入有效委托开始时间'},
+                        callback: {
+                            message: '开始日期不能大于结束日期',
+                            callback: function (value, validator, $field, options) {
+                                var endValue = $('#endTime').val();
+                                if (value && endValue) {
+                                    var start = new Date(value.replace(/\-/g, "\/"));
+                                    var end = new Date(endValue.replace(/\-/g, "\/"));
+                                    return start <= end;
+                                } else
+                                    return true;
+                            }
+                        }
+                    }
+                },
+                "endTime": {
+                    validators: {
+                        notEmpty: {message: '委托结束时间不能为空'},
+                        date: {format: $(this).data('format'), message: '请输入有效委托结束时间'},
+                        callback: {
+                            message: '结束日期不能小于开始日期',
+                            callback: function (value, validator, $field, options) {
+                                var startValue = $('#startTime').val();
+                                if (value && startValue) {
+                                    var end = new Date(value.replace(/\-/g, "\/"));
+                                    var start = new Date(startValue.replace(/\-/g, "\/"));
+                                    return start <= end;
+                                } else
+                                    return true;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        //初始化控件
+        form.initComponent();
+        delegateEditCtrl.initButtonEvent();
+        //编辑回填
+        if (id != 0) {
+            ajaxPost(basePath + "/activiti/delegate/get/" + id, null, function (data) {
+                if(data.moduleId){
+                    data.moduleId=data.moduleId.split(",");
+                }
+                if(data.attorney){
+                    ajaxPost(basePath + "/user/names", {ids: data.attorney}, function (map) {
+                        $("#attorneyName").val(map.name);
+                    });
+                }
+                form.initFormData(data);
+                //$("[name='moduleId']").val(data.moduleId).trigger("change");
+            })
+        }
+    });
+
+    function setAttorney(userId, userName) {
+        if (userId == $("#assignee").val()) {
+            modals.warn("委托人和被委托人不能为同一人");
+            return;
+        }
+        $("#attorney").val(userId);
+        $("#attorneyName").val(userName);
+    }
+
+</script>

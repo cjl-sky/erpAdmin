@@ -1,0 +1,104 @@
+<section class="content-header">
+    <h1>
+        <span>工作流demo</span>
+        <small>实验室三审-启动流程</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="${basePath}"><i class="fa fa-dashboard"></i> 首页</a></li>
+        <li><a href="#">系统管理</a></li>
+        <li class="active">实验室三审</li>
+    </ol>
+</section>
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-info">
+                <form id="lab_form" name="lab_form" class="form-horizontal">
+                    <div class="box-body">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">实验名称<span style="color:red">*</span></label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="实验名称">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">审核人<span style="color:red">*</span></label>
+                                <div class="col-sm-8">
+                                    <input type="icheck-checkbox" data-text="firstName" name="verifiers"  class="square-blue" data-flag="urlSelector" data-src="/lab/get/WORKFLOW-VERIFY"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">签发人<span style="color:red">*</span></label>
+                                <div class="col-sm-8">
+                                    <input type="icheck-checkbox" data-text="firstName" name="approvers" class="square-blue" data-flag="urlSelector" data-src="/lab/get/WORKFLOW-APPROVE">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">备注</label>
+                                <div class="col-sm-8">
+                                    <textarea name="remark" id="remark" placeholder="请填写备注"
+                                              class="form-control"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="box-footer text-right">
+                        <button type="submit" class="btn btn-primary" data-btn-type="save">提交流程</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+    var labform;
+    var id = "${id?default(0)}";
+    $(function () {
+        //初始化表单
+        labform = $("#lab_form").form({baseEntity:false});
+        //数据校验
+        $("#lab_form").bootstrapValidator({
+            message: '请输入有效值',
+            feedbackIcons: {
+                valid: 'glyphicon glyphicon-ok',
+                invalid: 'glyphicon glyphicon-remove',
+                validating: 'glyphicon glyphicon-refresh'
+            },
+            submitHandler: function () {
+                modals.confirm('确认提交流程？', function () {
+                    var formData = labform.getFormSimpleData();
+                    ajaxPost(basePath + '/lab/start', formData, function (data) {
+                        if (data.success) {
+                            modals.correct("流程已启动，请及时处理");
+                        } else {
+                            modals.error(data.message);
+                        }
+                    });
+                    clearInterval(interval);
+                });
+            },
+            fields: {
+                "name": {
+                    validators: {
+                        notEmpty: {message: '实验名称不能为空'}
+                    }
+                },
+                "verifiers": {
+                    validators: {
+                        notEmpty: {message: '审核人不能为空'}
+                    }
+                },
+                "approvers": {
+                    validators: {
+                        notEmpty: {message: '签发人不能为空'}
+                    }
+                }
+            }
+        });
+        //编辑回填
+        //初始化控件
+        labform.initComponent();
+    });
+
+</script>

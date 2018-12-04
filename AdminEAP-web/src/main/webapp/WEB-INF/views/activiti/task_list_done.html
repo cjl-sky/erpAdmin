@@ -1,0 +1,119 @@
+<style>
+    table.dataTable thead > tr > th {
+        padding-right: 0px;
+    }
+    #searchDiv .form-control{
+        width: 130px;
+    }
+</style>
+<section class="content-header">
+    <h1>
+        我的已办
+        <small>列表</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="${basePath}"><i class="fa fa-dashboard"></i> 首页</a></li>
+        <li><a href="#">工作流管理</a></li>
+        <li class="active">我的已办</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <!-- /.box-header -->
+                <div class="dataTables_filter" id="searchDiv" style="display: none">
+                    <!--查询条件-->
+                    <input type="hidden" value="${user.id}" data-noreset="true" name="userId">
+                    <input type="search" placeholder="请输入实例名称" title="名称" name="name"
+                           class="form-control" id="name" operator="like" likeOption="true">
+                    <input type="search" placeholder="请输入业务key" title="名称" name="businessKey"
+                           class="form-control" id="businessKey" operator="eq" likeOption="false">
+                    <select name="category" id="category" data-src="/activiti/module/getAll" data-flag="urlSelector"
+                            data-placeholder="请选择业务类别" class="form-control select2" data-text="name"
+                            data-value="code" style="width:130px;"
+                            data-blank="true"></select>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input type="search" placeholder="开始启动时间" title="生日" name="startTime" data-flag="datepicker" class="form-control" data-format="yyyy-mm-dd">
+                    </div>
+                    ~
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input type="search" placeholder="结束启动时间" title="生日" name="endTime" data-flag="datepicker" class="form-control" data-format="yyyy-mm-dd">
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" data-btn-type="search">查询</button>
+                        <button type="button" class="btn btn-default" data-btn-type="reset">重置</button>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default" data-btn-type="todo"><i class="fa fa-reply"></i>&nbsp;我的待办</button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <table id="taskDone_table" class="table table-bordered table-striped table-hover">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="msgcontainer">
+
+    </div>
+</section>
+
+<script>
+    var taskDoneTable;
+    var form = $("#searchDiv").form({baseEntity: false});
+    form.initComponent();
+
+    var taskDoneObj = {
+        showMonitor: function (rowId) {
+            modals.openWin({
+                winId: "flowWin",
+                width: "900px",
+                url: basePath + "/activiti/monitor/" + rowId,
+                title: "流程明细"
+            });
+        },
+        withdrawTask:function (rowId) {
+           modals.confirm("是否撤回该任务?",function () {
+               ajaxPost(basePath+"/activiti/task/withdraw/"+rowId+"/${user.id}",null,function (data) {
+                   if(data.success){
+                       taskDoneTable.reloadRowData();
+                   }else{
+                       modals.error(data.message);
+                   }
+               })
+           });
+        },
+        initButtonEvent:function () {
+            $("button[data-btn-type='todo']").click(function () {
+                loadPage(basePath+"/activiti/task/todo/list");
+            })
+        }
+    }
+
+    //方法入口
+    $(function () {
+        taskDoneTable = new CommonTable("taskDone_table", "task_done_list", "searchDiv", null);
+        taskDoneObj.initButtonEvent();
+    })
+
+    function fnRenderFlowState(value) {
+        if(value=="1")
+            return '<span class="label label-success">已办结</span>';
+        else
+            return '<span class="label label-danger">审批中</span>';
+    }
+
+    function fnRenderOperator(value, type, rowObj) {
+        var oper = "";
+        oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='taskDoneObj.showMonitor(\"" + value + "\")'>流程明细</a>";
+        if(rowObj.flowState=="0"&&rowObj.canWithdraw=="1") {
+            oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='taskDoneObj.withdrawTask(\"" + value + "\")'>撤回</a>";
+        }
+        return oper;
+    }
+</script>

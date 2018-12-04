@@ -1,0 +1,47 @@
+<form id="lab_form" name="lab_form" class="form-horizontal">
+       <div class="box-body">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label class="col-sm-3 control-label">实验名称<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" id="name" name="name" readonly="readonly" placeholder="实验名称">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">审核人<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="icheck-checkbox" data-text="firstName" name="verifiers" readonly="readonly"  class="square-blue" data-flag="urlSelector" data-src="/lab/get/WORKFLOW-VERIFY">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">签发人<span style="color:red">*</span></label>
+                <div class="col-sm-8">
+                    <input type="icheck-checkbox" data-text="firstName" name="approvers" readonly="readonly" class="square-blue" data-flag="urlSelector" data-src="/lab/get/WORKFLOW-APPROVE">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">备注</label>
+                <div class="col-sm-8">
+                                    <textarea name="remark"  readonly="readonly" id="remark" placeholder="请填写备注"
+                                              class="form-control"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script>
+    var labform;
+    var id = "${id?default(0)}";
+    $(function () {
+        //初始化表单
+        labform = $("#lab_form").form();
+        labform.initComponent();
+        if (id != 0) {
+            ajaxPost(basePath + "/lab/find/" + id, null, function (data) {
+                labform.initFormData(data);
+            })
+
+        }
+    });
+
+</script>

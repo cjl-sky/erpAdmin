@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+http://www.springframework.org/schema/tx 
+http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+http://www.springframework.org/schema/aop 
+http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+
+	<!-- JNDI方式配置数据源 -->
+	<!-- <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean"> 
+		<property name="jndiName" value="${jndiName}"></property> </bean> -->
+		<!-- destroy-method="close" -->
+	<!-- 配置c3p0数据源 -->
+	<bean id="dataSource" name="dataSource"
+		class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close" init-method="init">
+		<property name="driverClassName" value="${driverClassName}" />
+		<property name="url" value="${jdbc_url}" />
+		<property name="username" value="${jdbc_username}" />
+		<property name="password" value="${jdbc_password}" />
+
+		<property name="connectionProperties" value="config.decrypt=false"/>
+		<property name="filters" value="stat" />
+		<!-- 配置初始化大小、最小、最大 -->
+		<property name="initialSize" value="1" />
+		<property name="minIdle" value="1" />
+		<property name="maxActive" value="20" />
+		<!-- 配置获取连接等待超时的时间 -->
+		<property name="maxWait" value="60000" />
+
+		<!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+		<property name="timeBetweenEvictionRunsMillis" value="60000" />
+
+		<!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+		<property name="minEvictableIdleTimeMillis" value="300000" />
+
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+		<!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
+		<property name="poolPreparedStatements" value="true" />
+		<property name="maxPoolPreparedStatementPerConnectionSize" value="20" />
+	</bean>
+	
+	
+	
+	<!-- 配置hibernate session工厂 -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+
+				<prop key="hibernate.generate_statistics">true</prop> 
+				<prop key="hibernate.connection.release_mode">auto</prop> 
+				<prop key="hibernate.autoReconnect">true</prop>
+				<!-- <prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate4.SpringSessionContext
+				</prop> -->
+			</props>
+		</property>
+
+		<!-- 自动扫描注解方式配置的hibernate类文件 -->
+		<property name="packagesToScan">
+			<list>
+				<value>com.cnpc.**.entity</value>
+			</list>
+		</property>
+
+		<!-- 自动扫描hbm方式配置的hibernate文件和.hbm文件 -->
+		<!-- <property name="mappingDirectoryLocations"> <list> <value>classpath:sy/hbm</value> 
+			</list> </property> -->
+	</bean>
+	
+
+	<!-- 配置事务管理器 -->
+	<bean id="transactionManager" name="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<!-- 注解方式配置事务 -->
+	<!-- <tx:annotation-driven transaction-manager="transactionManager" /> -->
+		
+	<bean id="SpringContextUtil" class="com.cnpc.framework.utils.SpringContextUtil" scope="singleton"></bean>
+
+	<!-- 拦截器方式配置事务 -->
+	<tx:advice id="transactionAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="append*" propagation="REQUIRED" />
+			<tx:method name="insert*" propagation="REQUIRED" />
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="modify*" propagation="REQUIRED" />
+			<tx:method name="edit*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="remove*" propagation="REQUIRED" />
+			<tx:method name="repair*" propagation="REQUIRED" />
+			<tx:method name="delAndRepair*" propagation="REQUIRED" />
+			<tx:method name="execute*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="submit*" propagation="REQUIRED" />
+			<tx:method name="start*" propagation="REQUIRED" />
+			<tx:method name="batch*" propagation="REQUIRED" />
+
+			<tx:method name="get*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="count*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="find*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="load*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="search*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="datagrid*" propagation="REQUIRED" read-only="true" />
+
+			<tx:method name="*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- 一般只对service层添加事务即可 -->
+	<aop:config expose-proxy="true">
+		<aop:pointcut id="transactionPointcut" expression="execution(* com.cnpc..*Service.*(..))" />
+		<aop:advisor pointcut-ref="transactionPointcut"
+					 advice-ref="transactionAdvice" />
+	</aop:config>
+
+</beans>

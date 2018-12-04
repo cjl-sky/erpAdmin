@@ -1,0 +1,58 @@
+<!--通用审批-->
+<div class="form-group">
+    <label class="control-label col-xs-3">审批结果</label>
+    <div class="col-xs-7">
+        <label class="control-label" id="agreeLabel">
+            <input type="radio" name="approved" data-flag="icheck" checked="checked" class="square-blue" value="true"> 同意
+        </label> &nbsp;
+        <label class="control-label">
+            <input type="radio" name="approved" data-flag="icheck" class="square-blue" value="false"> 拒绝
+        </label>
+    </div>
+</div>
+<div class="form-group">
+    <label class="control-label col-xs-3">审批意见</label>
+    <div class="col-xs-7">
+        <textarea name="suggestion" id="suggestion" placeholder="请填写审批意见" class="form-control">同意</textarea>
+    </div>
+</div>
+<script>
+    var workflowCtrl = {
+        thisForm: null,
+        init: function (formId) {
+            this.thisForm = $("#" + formId).form({baseEntity: false});
+            this.thisForm.initComponent();
+            this.bindClickEvent(formId);
+            return this.thisForm;
+        },
+        bindClickEvent: function (formId) {
+            var intervalid = setInterval(function () {
+                if ($("#agreeLabel div").hasClass("iradio_square-blue")) {
+                    $("input[name='approved']").on('ifChecked', function (e) {
+                        var value=$(this).val();
+                        if (value=="false") {
+                            $("#suggestion").val("");
+                            $("#suggestion").attr("placeholder","请填写拒绝原因");
+                        }
+                        if(value=="true"){
+                            $("#suggestion").val("同意");
+                            $("#suggestion").attr("placeholder","请填写审批说明");
+                        }
+                        var validator = $("#"+formId).data('bootstrapValidator');
+                        if (validator && validator.options.fields["suggestion"])
+                            validator.updateStatus("suggestion", 'NOT_VALIDATED', null).validateField("suggestion");
+                    });
+                    clearInterval(intervalid);
+                }
+            }, 100);
+        },
+        validators: function () {
+            var fields = {
+                suggestion: {validators: {notEmpty: {message: "请选择审批意见"}}}
+
+            };
+            return fields;
+        }
+    }
+
+</script>

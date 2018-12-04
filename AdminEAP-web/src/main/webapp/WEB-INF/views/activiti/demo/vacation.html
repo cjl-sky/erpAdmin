@@ -1,0 +1,98 @@
+<section class="content-header">
+    <h1>
+        <span>工作流demo</span>
+        <small>请假示例-启动流程</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="${basePath}"><i class="fa fa-dashboard"></i> 首页</a></li>
+        <li><a href="#">系统管理</a></li>
+        <li class="active">请假示例</li>
+    </ol>
+</section>
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box box-info">
+                <div class="box-body">
+                <form name="vacation_form" id="vacation_form" class="form-horizontal" >
+                    <div class="col-xs-12">
+                        <div class="form-group has-feedback">
+                            <label class="col-xs-3 control-label">请假天数</label>
+                            <div class="col-xs-7">
+                                <input class="form-control" id="days"  name="days" placeholder="请填写请假天数"
+                                       type="text">
+                            </div>
+                        </div>
+                        <div class="form-group has-feedback">
+                            <label class="col-xs-3 control-label">开始时间</label>
+                            <div class="input-group col-xs-7" style="padding-left: 15px; padding-right: 15px;">
+                                <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                <input placeholder="请填写开始时间" name="startDate" id="startDate" data-flag="datepicker"
+                                       class="form-control" data-format="yyyy-mm-dd hh:ii" type="text">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label">请假原因</label>
+                            <div class="col-xs-7">
+                                <input class="form-control" id="motivation"  name="motivation"
+                                       placeholder="请填写请假原因" type="text">
+                            </div>
+                        </div>
+                        <input type="hidden" value="${user.name}" name="applyUserName">
+                    </div>
+                    <div class="col-xs-12 text-center" style="border-top: 1px solid #ddd;padding-top: 10px;">
+                        <button type="submit" class="btn btn-primary" data-btn-type="submitTask"><i
+                                class="fa fa-save"></i>&nbsp;提交
+                        </button>
+                    </div>
+                    <input value="" type="hidden">
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+
+    var vacationCtrl = {
+        vacationForm: null,
+        loadForm: function () {
+            this.vacationForm = $("#vacation_form").form({baseEntity: false});
+            var self = this;
+            $("#vacation_form").bootstrapValidator({
+                message: '请输入有效值',
+                feedbackIcons: {
+                    valid: 'glyphicon glyphicon-ok',
+                    invalid: 'glyphicon glyphicon-remove',
+                    validating: 'glyphicon glyphicon-refresh'
+                },
+                submitHandler: function (validator, taskform, submitButton) {
+                    modals.confirm('确认提交该流程？', function () {
+                        var params = self.vacationForm.getFormSimpleData();
+                        ajaxPost(basePath + '/activiti/demo/vacation/startFlow', params, function (data) {
+                            if (data.success) {
+                                modals.correct("流程已经成功启动,请到我的待办中及时处理");
+                            }else{
+                                modals.error(data.message);
+                            }
+                        });
+                    });
+                },
+                fields: {
+                    days: {validators: {notEmpty: {message: '请填写请假天数'}}},
+                    startDate: {validators: {notEmpty: {message: '请填写开始时间'}}}
+                }
+            });
+            this.vacationForm.initComponent();
+        },
+
+
+    };
+
+    $(function () {
+        //加载审批表单
+        vacationCtrl.loadForm();
+    })
+
+
+</script>

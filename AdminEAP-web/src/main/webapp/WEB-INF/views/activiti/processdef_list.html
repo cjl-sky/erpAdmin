@@ -1,0 +1,128 @@
+<style>
+    table.dataTable thead > tr > th {
+        padding-right: 0px;
+    }
+</style>
+<section class="content-header">
+    <h1>
+        工作流定义
+        <small>列表</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="${basePath}"><i class="fa fa-dashboard"></i> 首页</a></li>
+        <li><a href="#">工作流管理</a></li>
+        <li class="active">工作流定义</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <!-- /.box-header -->
+                <div class="dataTables_filter" id="searchDiv" style="display: none">
+                    <!--查询条件-->
+                    <input type="search" placeholder="请输入定义名称" title="名称" name="name"
+                           class="form-control" id="name" operator="like" likeOption="true">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" data-btn-type="search">查询</button>
+                        <button type="button" class="btn btn-default" data-btn-type="reset">重置</button>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default" data-btn-type="delete">删除</button>
+                        <button type="button" class="btn btn-default" data-btn-type="deleteForever">强制删除</button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <table id="processdef_table" class="table table-bordered table-striped table-hover">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="msgcontainer">
+
+    </div>
+</section>
+
+<script>
+    var processdefTable, winId = "modelWin";
+
+    var processDefObj = {
+        deleteProcessDef: function (rowId) {
+            if (!rowId) {
+                modals.info('请选择要删除的流程');
+                return false;
+            }
+            modals.confirm("是否要删除该工作流定义？", function () {
+                ajaxPost(basePath + "/activiti/processdef/delete/0/" + rowId, null, function (data) {
+                    if (data.success) {
+                        processdefTable.reloadRowData();
+                    } else {
+                        modals.info("工作流定义被引用，不可删除！");
+                    }
+                });
+            })
+        },
+        deleteProcessDefForever: function (rowId) {
+            if (!rowId) {
+                modals.info('请选择要删除的流程');
+                return false;
+            }
+            modals.confirm("是否要删强制除该工作流定义，正在执行的关联流程将被删除，是否确认？", function () {
+                ajaxPost(basePath + "/activiti/processdef/delete/1/" + rowId, null, function (data) {
+                    if (data.success) {
+                        processdefTable.reloadRowData();
+                    } else {
+                        modals.info("工作流定义被引用，不可删除！");
+                    }
+                });
+            })
+        },
+        showFlow: function (rowId) {
+            var rowData = processdefTable.getRowDataByRowId(rowId);
+            var title = "【" + rowData.name + "】xml&image";
+            modals.openWin({
+                winId: "flowWin",
+                width: "900px",
+                url: basePath + "/activiti/processdef/show/" + rowId,
+                title: title
+            });
+        },
+        exportXml: function (rowId) {
+            window.location.href = basePath + "/activiti/processdef/export/xml/" + rowId;
+        },
+        exportImage: function (rowId) {
+            window.location.href = basePath + "/activiti/processdef/export/image/" + rowId;
+        }
+    }
+
+    //方法入口
+    $(function () {
+        processdefTable = new CommonTable("processdef_table", "processdef_list", "searchDiv", null);
+        //绑定按钮事件
+        $("button[data-btn-type]").click(function () {
+            var action = $(this).data("btn-type");
+            var rowId = processdefTable.getSelectedRowId();
+            switch (action) {
+                case 'delete':
+                    processDefObj.deleteProcessDef(rowId);
+                    break;
+                case 'deleteForever':
+                    processDefObj.deleteProcessDefForever(rowId);
+                    break;
+                default:
+                    break;
+            }
+        })
+    })
+
+
+    function fnRenderOperator(value, type, rowObj) {
+        var oper = "";
+        oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='processDefObj.showFlow(\"" + value + "\")'>查看</a>";
+        oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='processDefObj.exportXml(\"" + value + "\")'>xml</a>";
+        oper += "&nbsp;&nbsp;&nbsp;<a href='javascript:void(0)' onclick='processDefObj.exportImage(\"" + value + "\")'>png</a>";
+        return oper;
+    }
+</script>
